@@ -1,0 +1,17 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "description": "This is my Backend Project",
+  "keywords": [
+    "Javascript",
+    "nodeJs",
+    "backend"
+  ],
+  "license": "ISC",
+  "author": "Prakash Dwivedi",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
