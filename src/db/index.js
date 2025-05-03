@@ -10,5 +10,6 @@ const connectDB = async () => {
         process.exit(1)
     }
 }
+//the above method is an asynchronous method so it will return a promise when it is executed => called inside index.js file in src.
 
 export default connectDB;
