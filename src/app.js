@@ -53,5 +53,13 @@ Example: A request to /logo.png would serve the file public/logo.png.
 
 app.use(cookieParser());
 
+
+
+//import routes
+import userRouter from "./routes/user.routes.js";
+
+//routes declaration"
+app.use("/api/v1/users", userRouter)
+
 export { app };
 //we can also export it by using "export default app" but this is also same 
