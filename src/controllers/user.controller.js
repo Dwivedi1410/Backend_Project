@@ -18,7 +18,7 @@ const registerUser = asyncHandler( async (req, res) => {
 
     const { username, email, fullName, password } = req.body;
     //because we get all the data from the body
-    console.log("email :", email);
+    // console.log("email :", email);
 
     if(
         [username, email, fullName, password].some((field) => field?.trim() === "")
@@ -40,7 +40,12 @@ const registerUser = asyncHandler( async (req, res) => {
     // Because req.files.avatar is an array of files
     //this req.files feature is given by the multer => here i am getting where multer has stored the file in out local server(in public/temp)
 
-    const coverImageLocalPath = req.files?.coverImage[0].path;
+    // const coverImageLocalPath = req.files?.coverImage[0].path;
+
+    let coverImageLocalPath;
+    if(req.files &&  Array.isArray(req.files.coverImage)  &&  req.files.coverImage.length > 0){
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
 
     if(!avatarLocalPath) {
         throw new ApiError(400, "Avatar is required");
