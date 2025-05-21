@@ -4,6 +4,23 @@ import {User} from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+const generateAccessAndRefreshToken = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+
+        user.refreshToken = refreshToken;
+        await user.save({validateBeforeSave : false})
+
+        return {accessToken, refreshToken}
+
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while generating Access and Refresh Token");
+    }
+}
+
 const registerUser = asyncHandler( async (req, res) => {
     // steps to register our user are :- 
     // get user details from the frontend
@@ -86,9 +103,108 @@ const registerUser = asyncHandler( async (req, res) => {
             createdUser,
            "User resgistered successfully",
         )
-    )
-
-     
+    )    
 })
 
-export {registerUser}
+const loginUser = asyncHandler( async (req, res) => {
+    //steps :-
+    //get user data from the body
+    //you can either choose username or email for login
+    //find the user
+    //password check
+    //access and refresh token
+    //send these tokens with the cookies(secure cookies)
+
+    const { username, email, password} = req.body;
+
+    if(!username && !email){
+        throw new ApiError(400, "Username or Email is required");
+    }
+
+    const user = await User.findOne({
+        $or : [{username}, {password}]
+    })
+
+    if(!user){
+        throw new ApiError(404, "User dosn't exists")
+    }
+
+    const isValidPassword = await user.isPasswordCorrect(password)
+
+    if(!isValidPassword) {
+        throw new ApiError(401, "Invalid Password");
+    }
+
+    const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id);
+
+    const loggedInUser = await User.findOne(user._id).select("-password -refreshToken");
+
+
+    // Now we have to send the cookies
+    // For this we have to create options(nomral object)
+
+    const options = {
+        httpOnly : true,
+        secure : true,
+        //This is done so that no one can modify our cookies from the frontend it can only be controlled or modifiable from the server
+    }
+
+    return res
+    .status(200)
+    .cookie("refreshToken" , refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .json(
+        new ApiResponse(
+            200, 
+            {
+                user: loggedInUser,
+                refreshToken,
+                accessToken,
+            },
+            "User LoggedIn successfully"
+        )
+    )
+})
+
+const logoutUser = asyncHandler( async (req, res) => {
+    //what are the steps need to logout user :- 
+    //first clear the cookies
+    //and also remove the access and refresh tokens
+
+    User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {
+                refreshToken : undefined
+            }
+        },
+        {
+            new : true
+        }
+    )
+
+    const options = {
+        httpOnly : true,
+        secure : true,
+        //This is done so that no one can modify our cookies from the frontend it can only be controlled or modifiable from the server
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(
+        new ApiResponse(
+            200,
+            {},
+            "User LoggedOut"
+        )
+    )
+
+})
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser
+}
